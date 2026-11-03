@@ -14,7 +14,6 @@ const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 const upload = multer({ dest: 'uploads/' });
 
-// Active sessions: token -> { client, connection, player, guildId, channelId }
 const activeBots = new Map();
 let globalAudioPath = null;
 let amplifierSettings = { gain: 0, airQuality: 10, bassBoost: 0 };
@@ -61,6 +60,31 @@ app.post('/api/fetch-account-info', async (req, res) => {
     res.json({ success: true, accounts: accountsData });
 });
 
+// API: Update Server Profile (Nickname)
+app.post('/api/update-server-profile', async (req, res) => {
+    const { token, guildId, nickname } = req.body;
+    if (!token || !guildId) return res.status(400).json({ success: false, message: 'Token and Guild ID required' });
+
+    try {
+        const client = new Client({ checkUpdate: false });
+        await new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('Timeout')), 10000);
+            client.on('ready', () => { clearTimeout(timer); resolve(); });
+            client.login(token).catch(reject);
+        });
+
+        const guild = await client.guilds.fetch(guildId);
+        if (!guild) throw new Error('Guild not found');
+
+        await guild.members.me.setNickname(nickname || '');
+        client.destroy();
+
+        res.json({ success: true, message: 'Dark Alise: Server profile / nickname updated successfully!' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Failed to update server profile: ' + err.message });
+    }
+});
+
 // API: Connect Bots to Voice & Start 24/7 Audio Stream with Amplifier
 app.post('/api/connect-amplifier', upload.single('media'), async (req, res) => {
     const { tokens, channelId, gain, airQuality, bassBoost } = req.body;
@@ -76,15 +100,12 @@ app.post('/api/connect-amplifier', upload.single('media'), async (req, res) => {
         return res.status(400).json({ success: false, message: 'Tokens, Channel ID, and Audio/Media file are required!' });
     }
 
-    const tokenList = JSON.parse(tokens); // Array of active tokens selected
+    const tokenList = JSON.parse(tokens);
     let successCount = 0;
     let errors = [];
 
     for (const token of tokenList) {
-        if (activeBots.has(token)) {
-            // Already connected, update settings if needed
-            continue;
-        }
+        if (activeBots.has(token)) continue;
 
         try {
             const client = new Client({ checkUpdate: false });
@@ -119,10 +140,7 @@ app.post('/api/connect-amplifier', upload.single('media'), async (req, res) => {
                             }
                         };
 
-                        player.on(AudioPlayerStatus.Idle, () => {
-                            playLoop();
-                        });
-
+                        player.on(AudioPlayerStatus.Idle, () => { playLoop(); });
                         player.on('error', error => {
                             console.error('[Dark Alise Player Error]:', error.message);
                             setTimeout(playLoop, 3000);
