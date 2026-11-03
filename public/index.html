@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Alise - Ultimate Control Panel</title>
+    <style>
+        :root {
+            --bg-dark: #0b0b0f;
+            --panel-bg: #14141c;
+            --panel-card: #181822;
+            --accent-orange: #ff5722;
+            --accent-purple: #a855f7;
+            --text-main: #ffffff;
+            --text-muted: #8e8ea0;
+            --border-color: #272738;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* LEFT SIDEBAR (SERVERS) */
+        .sidebar {
+            width: 80px;
+            background: #0f0f15;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 0;
+            gap: 15px;
+            overflow-y: auto;
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        .server-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #20202c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+        .server-icon:hover, .server-icon.active {
+            border-color: var(--accent-orange);
+            border-radius: 16px;
+        }
+        .server-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .server-icon span { font-size: 11px; font-weight: bold; color: var(--text-muted); text-align: center; padding: 2px; }
+
+        /* MAIN CONTENT AREA */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-dark);
+            overflow-y: auto;
+        }
+
+        /* TOP NAVBAR */
+        .navbar {
+            height: 60px;
+            background: #111118;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 18px;
+            letter-spacing: 1px;
+            color: var(--accent-orange);
+        }
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-purple));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        /* USER PROFILE DROPDOWN TRIGGER */
+        .user-dropdown-btn {
+            background: var(--panel-card);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 20px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .user-dropdown-btn img { width: 24px; height: 24px; border-radius: 50%; }
+
+        /* PANEL BODY */
+        .panel-body {
+            max-width: 650px;
+            margin: 30px auto;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        .account-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--panel-card);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .account-header img { width: 40px; height: 40px; border-radius: 50%; }
+        .account-info h3 { margin: 0; font-size: 15px; color: #fff; }
+        .account-info span { font-size: 12px; color: var(--text-muted); }
+
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #d1d5db; }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            background: #0b0b0f;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        textarea { height: 90px; resize: vertical; font-family: monospace; }
+
+        .btn-connect {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent-orange);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .btn-connect:hover { opacity: 0.9; }
+        .btn-disconnect {
+            background: #dc2626 !important;
+        }
+
+        .status-badge {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        /* AMPLIFIER SETTINGS SECTION */
+        .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--accent-orange);
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+        .slider-group { margin-bottom: 15px; }
+        .slider-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: var(--text-muted); }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-orange);
+            background: #0b0b0f;
+        }
+
+        /* SOUNDBOARD & UPLOAD */
+        .soundboard-box {
+            background: var(--panel-card);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .soundboard-box input[type="file"] { display: none; }
+        .upload-btn {
+            display: inline-block;
+            background: #272738;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .upload-btn:hover { background: #37374d; }
+
+        /* MODAL (LINKED ACCOUNTS) */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 420px;
+            padding: 24px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+        }
+        .modal h3 { margin-top: 0; color: var(--accent-purple); font-size: 18px; }
+        .account-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--panel-card);
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .account-list-item img { width: 32px; height: 32px; border-radius: 50%; }
+        .modal-close {
+            background: var(--accent-orange);
+            color: #fff;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LEFT SIDEBAR: SERVERS -->
+    <div class="sidebar" id="serverSidebar">
+        <div class="server-icon active" title="Home">
+            <span>🏠</span>
+        </div>
+        <!-- Dynamically populated servers -->
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="main-container">
+        <!-- TOP NAVBAR -->
+        <div class="navbar">
+            <div class="brand">
+                <div class="brand-logo">⚡</div>
+                DARK ALISE
+            </div>
+            <div class="user-dropdown-btn" id="accountMenuBtn">
+                <img src="https://cdn.discordapp.com/embed/avatars/0.png" id="navAvatar">
+                <span id="navUsername">~* D A R K \ n / T O P *~</span>
+                <span>▼</span>
+            </div>
+        </div>
+
+        <!-- PANEL BODY -->
+        <div class="panel-body">
+            
+            <!-- TOKENS SETUP CARD (If multiple tokens needed) -->
+            <div class="card" id="tokenCard">
+                <h3 style="margin-top:0; color:var(--accent-orange);">🔗 Multi-Account Tokens</h3>
+                <div class="form-group">
+                    <label>Discord Tokens (One per line):</label>
+                    <textarea id="tokensInput" placeholder="Paste your self-bot tokens here..."></textarea>
+                </div>
+                <button class="btn-connect" id="loadTokensBtn">Load Linked Accounts & Servers</button>
+            </div>
+
+            <!-- MAIN CONTROL CARD -->
+            <div class="card" id="controlCard" style="display:none;">
+                <div class="account-header">
+                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" id="activeAvatar">
+                    <div class="account-info">
+                        <h3 id="activeUsername">~* D A R K \ n / T O P *~</h3>
+                        <span id="activeTokenStatus">Connected (Self-Mute & Self-Deaf Active)</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>📍 Voice Channel ID:</label>
+                    <input type="text" id="channelIdInput" placeholder="Enter target Voice Channel ID...">
+                </div>
+
+                <button class="btn-connect" id="connectAmplifierBtn">🔊 CONNECT AMPLIFIER</button>
+                <div class="status-badge" id="connectionStatus">AWAITING CONNECTION</div>
+
+                <div id="extendedControls" style="display:none; margin-top:25px;">
+                    <!-- AMPLIFIER SETTINGS -->
+                    <div class="section-title">⚙️ Amplifier Settings</div>
+                    <div class="slider-group">
+                        <div class="slider-header"><span>Gain</span><span id="gainVal">0 dB</span></div>
+                        <input type="range" id="gainSlider" min="-20" max="20" value="0">
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-header"><span>Air Quality</span><span id="airVal">10 %</span></div>
+                        <input type="range" id="airSlider" min="0" max="100" value="10">
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-header"><span>Bass Boost</span><span id="bassVal">0 %</span></div>
+                        <input type="range" id="bassSlider" min="0" max="100" value="0">
+                    </div>
+
+                    <!-- SOUNDBOARD & 24/7 MEDIA UPLOAD -->
+                    <div class="section-title" style="margin-top:20px;">🎵 Soundboard & 24/7 Audio / Video Stream</div>
+                    <div class="soundboard-box">
+                        <label class="upload-btn" for="mediaUploadInput">📁 + UPLOAD AUDIO / VIDEO</label>
+                        <input type="file" id="mediaUploadInput" accept="audio/*,video/*">
+                        <p id="fileNameDisplay" style="font-size:12px; color:var(--text-muted); margin-top:8px;">No file selected — upload an audio or video file above.</p>
+                    </div>
+
+                    <!-- INFILTRATE USER -->
+                    <div class="section-title" style="margin-top:20px;">🎯 Infiltrate User</div>
+                    <div class="form-group">
+                        <label>Select Voice Member:</label>
+                        <select id="memberSelect" style="width:100%; padding:12px; background:#0b0b0f; border:1px solid var(--border-color); border-radius:8px; color:#fff;">
+                            <option>Click connect first to load members</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- LINKED ACCOUNTS MODAL -->
+    <div class="modal-overlay" id="accountsModal">
+        <div class="modal">
+            <h3>Linked Accounts</h3>
+            <div id="linkedAccountsList">
+                <!-- Dynamically populated -->
+            </div>
+            <button class="modal-close" id="closeModalBtn">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let loadedAccounts = [];
+        let selectedTokens = [];
+        let isConnected = false;
+        let selectedFile = null;
+
+        // UI toggles
+        const accountMenuBtn = document.getElementById('accountMenuBtn');
+        const accountsModal = document.getElementById('accountsModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const loadTokensBtn = document.getElementById('loadTokensBtn');
+        const connectAmplifierBtn = document.getElementById('connectAmplifierBtn');
+        const controlCard = document.getElementById('controlCard');
+        const tokenCard = document.getElementById('tokenCard');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const extendedControls = document.getElementById('extendedControls');
+        const mediaUploadInput = document.getElementById('mediaUploadInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+        accountMenuBtn.addEventListener('click', () => { accountsModal.style.display = 'flex'; });
+        closeModalBtn.addEventListener('click', () => { accountsModal.style.display = 'none'; });
+
+        // Sliders update
+        document.getElementById('gainSlider').addEventListener('input', (e) => { document.getElementById('gainVal').innerText = e.target.value + ' dB'; });
+        document.getElementById('airSlider').addEventListener('input', (e) => { document.getElementById('airVal').innerText = e.target.value + ' %'; });
+        document.getElementById('bassSlider').addEventListener('input', (e) => { document.getElementById('bassVal').innerText = e.target.value + ' %'; });
+
+        mediaUploadInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                fileNameDisplay.innerText = 'Selected: ' + selectedFile.name;
+            }
+        });
+
+        // Load tokens
+        loadTokensBtn.addEventListener('click', async () => {
+            const tokens = document.getElementById('tokensInput').value.trim();
+            if (!tokens) return alert('Please enter at least one token!');
+
+            loadTokensBtn.innerText = 'Loading Accounts & Servers...';
+            try {
+                const res = await fetch('/api/fetch-account-info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tokens })
+                });
+                const data = await res.json();
+                if (data.success && data.accounts.length > 0) {
+                    loadedAccounts = data.accounts;
+                    selectedTokens = loadedAccounts.map(a => a.token);
+                    updateUIWithAccounts();
+                    tokenCard.style.display = 'none';
+                    controlCard.style.display = 'block';
+                } else {
+                    alert('Failed to load accounts. Check your tokens.');
+                }
+            } catch (err) {
+                alert('Server error loading accounts.');
+            }
+            loadTokensBtn.innerText = 'Load Linked Accounts & Servers';
+        });
+
+        function updateUIWithAccounts() {
+            if (loadedAccounts.length === 0) return;
+            const primary = loadedAccounts[0];
+            document.getElementById('navUsername').innerText = primary.username;
+            document.getElementById('navAvatar').src = primary.avatar;
+            document.getElementById('activeUsername').innerText = primary.username;
+            document.getElementById('activeAvatar').src = primary.avatar;
+
+            // Populate Sidebar Servers
+            const sidebar = document.getElementById('serverSidebar');
+            sidebar.innerHTML = '<div class="server-icon active" title="Home"><span>🏠</span></div>';
+            
+            let allGuilds = [];
+            loadedAccounts.forEach(acc => {
+                acc.guilds.forEach(g => {
+                    if (!allGuilds.some(item => item.id === g.id)) {
+                        allGuilds.push(g);
+                        const div = document.createElement('div');
+                        div.className = 'server-icon';
+                        div.title = g.name;
+                        div.innerHTML = `<img src="${g.icon}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">`;
+                        sidebar.appendChild(div);
+                    }
+                });
+            });
+
+            // Populate Modal Linked Accounts
+            const listModal = document.getElementById('linkedAccountsList');
+            listModal.innerHTML = '';
+            loadedAccounts.forEach((acc, idx) => {
+                const item = document.createElement('div');
+                item.className = 'account-list-item';
+                item.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" checked data-token="${acc.token}" class="acc-checkbox">
+                        <img src="${acc.avatar}">
+                        <span style="font-size:13px; font-weight:600;">${acc.username}</span>
+                    </div>
+                `;
+                listModal.appendChild(item);
+            });
+        }
+
+        // Connect / Disconnect Amplifier
+        connectAmplifierBtn.addEventListener('click', async () => {
+            const channelId = document.getElementById('channelIdInput').value.trim();
+            if (!channelId) return alert('Please enter a Voice Channel ID!');
+            if (!selectedFile) return alert('Please upload an audio or video file first!');
+
+            // Gather checked tokens
+            const checkboxes = document.querySelectorAll('.acc-checkbox');
+            selectedTokens = [];
+            checkboxes.forEach(cb => { if (cb.checked) selectedTokens.push(cb.getAttribute('data-token')); });
+            if (selectedTokens.length === 0) return alert('Please select at least one account!');
+
+            const formData = new FormData();
+            formData.append('tokens', JSON.stringify(selectedTokens));
+            formData.append('channelId', channelId);
+            formData.append('media', selectedFile);
+            formData.append('gain', document.getElementById('gainSlider').value);
+            formData.append('airQuality', document.getElementById('airSlider').value);
+            formData.append('bassBoost', document.getElementById('bassSlider').value);
+
+            if (!isConnected) {
+                connectAmplifierBtn.innerText = 'Connecting Amplifier...';
+                try {
+                    const res = await fetch('/api/connect-amplifier', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        isConnected = true;
+                        connectAmplifierBtn.innerText = '✕ DISCONNECT AMPLIFIER';
+                        connectAmplifierBtn.classList.add('btn-disconnect');
+                        connectionStatus.innerText = 'CONNECTED / AMPLIFIER ACTIVE (Self-Mute & Self-Deaf On)';
+                        connectionStatus.style.color = '#34d399';
+                        extendedControls.style.display = 'block';
+
+                        // Fetch members
+                        fetchMembers(selectedTokens[0], channelId);
+                    } else {
+                        alert(data.message || 'Connection failed.');
+                        connectAmplifierBtn.innerText = '🔊 CONNECT AMPLIFIER';
+                    }
+                } catch (err) {
+                    alert('Error connecting amplifier.');
+                    connectAmplifierBtn.innerText = '🔊 CONNECT AMPLIFIER';
+                }
+            } else {
+                // Disconnect
+                connectAmplifierBtn.innerText = 'Disconnecting...';
+                try {
+                    const res = await fetch('/api/disconnect-amplifier', { method: 'POST' });
+                    const data = await res.json();
+                    isConnected = false;
+                    connectAmplifierBtn.innerText = '🔊 CONNECT AMPLIFIER';
+                    connectAmplifierBtn.classList.remove('btn-disconnect');
+                    connectionStatus.innerText = 'AWAITING CONNECTION';
+                    connectionStatus.style.color = 'var(--text-muted)';
+                    extendedControls.style.display = 'none';
+                } catch (err) {
+                    alert('Error disconnecting.');
+                }
+            }
+        });
+
+        async function fetchMembers(token, channelId) {
+            try {
+                const res = await fetch('/api/fetch-members', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, channelId })
+                });
+                const data = await res.json();
+                const select = document.getElementById('memberSelect');
+                select.innerHTML = '';
+                if (data.success && data.members.length > 0) {
+                    data.members.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.innerText = m.username;
+                        select.appendChild(opt);
+                    });
+                } else {
+                    select.innerHTML = '<option>No members found in voice channel</option>';
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>
